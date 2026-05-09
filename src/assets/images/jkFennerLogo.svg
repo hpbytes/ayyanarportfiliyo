@@ -1,0 +1,18 @@
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .jk-text { font-family: Arial, sans-serif; font-weight: bold; font-size: 100px; fill: #1B8B8B; }
+      .fenner-text { font-family: Arial, sans-serif; font-weight: bold; font-size: 100px; fill: #1B8B8B; }
+    </style>
+  </defs>
+  
+  <!-- Teal geometric shape (3D arrow/chevron) -->
+  <polygon points="80,120 140,80 140,240 80,200" fill="#1B8B8B"/>
+  <polygon points="110,140 170,100 170,260 110,220" fill="#2CA8A8"/>
+  
+  <!-- Dark shape (bottom shadow) -->
+  <polygon points="80,200 110,220 170,180 140,160" fill="#3D3D3D"/>
+  
+  <!-- Text -->
+  <text x="220" y="260" class="jk-text">JK Fenner</text>
+</svg>
