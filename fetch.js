@@ -16,14 +16,24 @@ const ERR = {
   requestFailedMedium:
     "The request to Medium didn't succeed. Check if Medium username in your .env file is correct."
 };
-if (USE_GITHUB_DATA === "true") {
-  if (GITHUB_USERNAME === undefined) {
-    throw new Error(ERR.noUserName);
+
+const isPlaceholderValue = value => {
+  if (!value) {
+    return true;
   }
 
-  console.log(`Fetching profile data for ${GITHUB_USERNAME}`);
-  var data = JSON.stringify({
-    query: `
+  return /YOUR\s+GITHUB\s+USERNAME|YOU\s+MEDIUM\s+USERNAME/i.test(value);
+};
+
+if (USE_GITHUB_DATA === "true") {
+  if (isPlaceholderValue(GITHUB_USERNAME)) {
+    console.log(
+      "Skipping GitHub profile fetch because GITHUB_USERNAME is not configured."
+    );
+  } else {
+    console.log(`Fetching profile data for ${GITHUB_USERNAME}`);
+    var data = JSON.stringify({
+      query: `
 {
   user(login:"${GITHUB_USERNAME}") { 
     name
@@ -55,50 +65,52 @@ if (USE_GITHUB_DATA === "true") {
     }
 }
 `
-  });
-  const default_options = {
-    hostname: "api.github.com",
-    path: "/graphql",
-    port: 443,
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${GITHUB_TOKEN}`,
-      "User-Agent": "Node"
-    }
-  };
-
-  const req = https.request(default_options, res => {
-    let data = "";
-
-    console.log(`statusCode: ${res.statusCode}`);
-    if (res.statusCode !== 200) {
-      throw new Error(ERR.requestFailed);
-    }
-
-    res.on("data", d => {
-      data += d;
     });
-    res.on("end", () => {
-      fs.writeFile("./public/profile.json", data, function (err) {
-        if (err) return console.log(err);
-        console.log("saved file to public/profile.json");
+    const default_options = {
+      hostname: "api.github.com",
+      path: "/graphql",
+      port: 443,
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        "User-Agent": "Node"
+      }
+    };
+
+    const req = https.request(default_options, res => {
+      let data = "";
+
+      console.log(`statusCode: ${res.statusCode}`);
+      if (res.statusCode !== 200) {
+        throw new Error(ERR.requestFailed);
+      }
+
+      res.on("data", d => {
+        data += d;
+      });
+      res.on("end", () => {
+        fs.writeFile("./public/profile.json", data, function (err) {
+          if (err) return console.log(err);
+          console.log("saved file to public/profile.json");
+        });
       });
     });
-  });
 
-  req.on("error", error => {
-    throw error;
-  });
+    req.on("error", error => {
+      throw error;
+    });
 
-  req.write(data);
-  req.end();
+    req.write(data);
+    req.end();
+  }
 }
 
-if (MEDIUM_USERNAME !== undefined) {
+if (!isPlaceholderValue(MEDIUM_USERNAME)) {
+  const encodedMediumUsername = encodeURIComponent(MEDIUM_USERNAME);
   console.log(`Fetching Medium blogs data for ${MEDIUM_USERNAME}`);
   const options = {
     hostname: "api.rss2json.com",
-    path: `/v1/api.json?rss_url=https://medium.com/feed/@${MEDIUM_USERNAME}`,
+    path: `/v1/api.json?rss_url=https://medium.com/feed/@${encodedMediumUsername}`,
     port: 443,
     method: "GET"
   };
@@ -108,7 +120,7 @@ if (MEDIUM_USERNAME !== undefined) {
 
     console.log(`statusCode: ${res.statusCode}`);
     if (res.statusCode !== 200) {
-      throw new Error(ERR.requestMediumFailed);
+      throw new Error(ERR.requestFailedMedium);
     }
 
     res.on("data", d => {
@@ -127,4 +139,8 @@ if (MEDIUM_USERNAME !== undefined) {
   });
 
   req.end();
+} else {
+  console.log(
+    "Skipping Medium blog fetch because MEDIUM_USERNAME is not configured."
+  );
 }
